@@ -20,11 +20,11 @@ function SettingsPage() {
   const fetchStats = async () => {
     try {
       const [p, c, d, b, db] = await Promise.all([
-        fetch('http://localhost:8080/api/products').then(r => r.ok ? r.json() : []),
-        fetch('http://localhost:8080/api/customers').then(r => r.ok ? r.json() : []),
-        fetch('http://localhost:8080/api/dealers').then(r => r.ok ? r.json() : []),
-        fetch('http://localhost:8080/api/bills').then(r => r.ok ? r.json() : []),
-        fetch('http://localhost:8080/api/dealer-bills').then(r => r.ok ? r.json() : [])
+        fetch('https://shree-traders.onrender.com/api/products').then(r => r.ok ? r.json() : []),
+        fetch('https://shree-traders.onrender.com/api/customers').then(r => r.ok ? r.json() : []),
+        fetch('https://shree-traders.onrender.com/api/dealers').then(r => r.ok ? r.json() : []),
+        fetch('https://shree-traders.onrender.com/api/bills').then(r => r.ok ? r.json() : []),
+        fetch('https://shree-traders.onrender.com/api/dealer-bills').then(r => r.ok ? r.json() : [])
       ]);
       setStats({ products: p.length, customers: c.length, dealers: d.length });
       setFullData({ customers: c, dealers: d, bills: b, dealerBills: db, products: p });
@@ -47,11 +47,11 @@ function SettingsPage() {
       // ✅ Fetch ALL data DIRECTLY here — do NOT rely on React state
       // because setState is async and html2canvas would capture before re-render
       const [products, customers, dealers, bills, dealerBills] = await Promise.all([
-        fetch('http://localhost:8080/api/products').then(r => r.ok ? r.json() : []),
-        fetch('http://localhost:8080/api/customers').then(r => r.ok ? r.json() : []),
-        fetch('http://localhost:8080/api/dealers').then(r => r.ok ? r.json() : []),
-        fetch('http://localhost:8080/api/bills').then(r => r.ok ? r.json() : []),
-        fetch('http://localhost:8080/api/dealer-bills').then(r => r.ok ? r.json() : [])
+        fetch('https://shree-traders.onrender.com/api/products').then(r => r.ok ? r.json() : []),
+        fetch('https://shree-traders.onrender.com/api/customers').then(r => r.ok ? r.json() : []),
+        fetch('https://shree-traders.onrender.com/api/dealers').then(r => r.ok ? r.json() : []),
+        fetch('https://shree-traders.onrender.com/api/bills').then(r => r.ok ? r.json() : []),
+        fetch('https://shree-traders.onrender.com/api/dealer-bills').then(r => r.ok ? r.json() : [])
       ]);
 
       // Also update the on-screen stats

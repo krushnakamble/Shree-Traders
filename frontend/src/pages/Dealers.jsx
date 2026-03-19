@@ -18,7 +18,7 @@ function Dealers() {
   
   const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
 
-  const API_URL = 'http://localhost:8080/api/dealers';
+  const API_URL = 'https://shree-traders.onrender.com/api/dealers';
 
   const fetchDealers = async () => {
     setLoading(true);

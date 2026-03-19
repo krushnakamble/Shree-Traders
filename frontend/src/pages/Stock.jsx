@@ -22,7 +22,7 @@ function Stock() {
 
   const [formData, setFormData] = useState({ name: '', category: '', sku: '', quantity: '', price: '' });
 
-  const API_URL = 'http://localhost:8080/api/products';
+  const API_URL = 'https://shree-traders.onrender.com/api/products';
 
   const fetchProducts = async () => {
     setLoading(true);

@@ -468,3 +468,103 @@ body {
 }
 
 .print-only { display: none; }
+
+/* MOBILE RESPONSIVENESS */
+@media (max-width: 900px) {
+  .erp-container {
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+  }
+  
+  body { overflow: auto; }
+  
+  .erp-main {
+    overflow: visible;
+    height: auto;
+  }
+  
+  .erp-sidebar {
+    width: 100%;
+    height: auto;
+    padding-bottom: 20px;
+  }
+  
+  .erp-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 0 20px;
+  }
+  
+  .erp-nav-item {
+    flex: 1 1 calc(50% - 8px);
+    justify-content: center;
+    text-align: center;
+  }
+  
+  .erp-user-box {
+    margin: 20px;
+    border-radius: var(--radius);
+  }
+  
+  .erp-header {
+    height: auto;
+    flex-direction: column;
+    padding: 20px;
+    gap: 15px;
+    align-items: flex-start;
+  }
+  
+  .erp-search-container {
+    width: 100%;
+  }
+  
+  .erp-content {
+    padding: 15px;
+  }
+  
+  .erp-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  @media (max-width: 500px) {
+    .erp-stats {
+      grid-template-columns: 1fr;
+    }
+    .erp-nav-item {
+      flex: 1 1 100%;
+    }
+  }
+  
+  .stat-grid-modern {
+    grid-template-columns: 1fr;
+  }
+  
+  .erp-form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .action-tabs {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .action-tab {
+    text-align: center;
+    width: 100%;
+  }
+  
+  .erp-card-header-clean {
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+  }
+  
+  .erp-panel-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+  }
+}

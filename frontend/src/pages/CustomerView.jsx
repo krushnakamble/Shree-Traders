@@ -32,7 +32,7 @@ function CustomerView() {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState(new Date().toISOString().split('T')[0]);
 
-  const API_BASE = 'http://localhost:8080/api';
+  const API_BASE = 'https://shree-traders.onrender.com/api';
 
   const fetchData = async () => {
     try {

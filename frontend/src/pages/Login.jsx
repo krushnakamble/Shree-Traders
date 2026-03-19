@@ -120,7 +120,7 @@ function Login() {
     if (!email || !password) { setError('कृपया सर्व माहिती भरा.'); return; }
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:8080/api/auth/login', {
+      const response = await fetch('https://shree-traders.onrender.com/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, role }),
