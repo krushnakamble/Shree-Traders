@@ -1,0 +1,108 @@
+﻿[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------------< com.shoperp:backend >-------------------------
+[INFO] Building shop-erp-backend 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.3.2:clean (default-clean) @ backend ---
+[INFO] Deleting C:\Users\ASUS\Desktop\clone1\backend\target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ backend ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 0 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ backend ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 7 source files with javac [debug release 21] to target\classes
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /C:/Users/ASUS/Desktop/clone1/backend/src/main/java/com/shoperp/config/DataInitializer.java:[19,33] constructor User in class com.shoperp.model.User cannot be applied to given types;
+  required: no arguments
+  found:    <nulltype>,java.lang.String,java.lang.String,java.lang.String
+  reason: actual and formal argument lists differ in length
+[ERROR] /C:/Users/ASUS/Desktop/clone1/backend/src/main/java/com/shoperp/config/DataInitializer.java:[22,33] constructor User in class com.shoperp.model.User cannot be applied to given types;
+  required: no arguments
+  found:    <nulltype>,java.lang.String,java.lang.String,java.lang.String
+  reason: actual and formal argument lists differ in length
+[ERROR] /C:/Users/ASUS/Desktop/clone1/backend/src/main/java/com/shoperp/controller/AuthController.java:[23,73] cannot find symbol
+  symbol:   method getEmail()
+  location: variable request of type com.shoperp.dto.LoginRequest
+[ERROR] /C:/Users/ASUS/Desktop/clone1/backend/src/main/java/com/shoperp/controller/AuthController.java:[28,21] cannot find symbol
+  symbol:   method getPassword()
+  location: variable user of type com.shoperp.model.User
+[ERROR] /C:/Users/ASUS/Desktop/clone1/backend/src/main/java/com/shoperp/controller/AuthController.java:[28,50] cannot find symbol
+  symbol:   method getPassword()
+  location: variable request of type com.shoperp.dto.LoginRequest
+[ERROR] /C:/Users/ASUS/Desktop/clone1/backend/src/main/java/com/shoperp/controller/AuthController.java:[28,73] cannot find symbol
+  symbol:   method getRole()
+  location: variable user of type com.shoperp.model.User
+[ERROR] /C:/Users/ASUS/Desktop/clone1/backend/src/main/java/com/shoperp/controller/AuthController.java:[28,98] cannot find symbol
+  symbol:   method getRole()
+  location: variable request of type com.shoperp.dto.LoginRequest
+[ERROR] /C:/Users/ASUS/Desktop/clone1/backend/src/main/java/com/shoperp/controller/AuthController.java:[32,54] cannot find symbol
+  symbol:   method getEmail()
+  location: variable user of type com.shoperp.model.User
+[ERROR] /C:/Users/ASUS/Desktop/clone1/backend/src/main/java/com/shoperp/controller/AuthController.java:[34,29] cannot find symbol
+  symbol:   method getRole()
+  location: variable user of type com.shoperp.model.User
+[ERROR] /C:/Users/ASUS/Desktop/clone1/backend/src/main/java/com/shoperp/controller/AuthController.java:[33,29] cannot find symbol
+  symbol:   method getEmail()
+  location: variable user of type com.shoperp.model.User
+[ERROR] /C:/Users/ASUS/Desktop/clone1/backend/src/main/java/com/shoperp/controller/AuthController.java:[40,17] constructor LoginResponse in class com.shoperp.dto.LoginResponse cannot be applied to given types;
+  required: no arguments
+  found:    boolean,java.lang.String,<nulltype>,<nulltype>,<nulltype>
+  reason: actual and formal argument lists differ in length
+[INFO] 11 errors 
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  1.393 s
+[INFO] Finished at: 2026-03-18T17:18:13+05:30
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.11.0:compile (default-compile) on project backend: Compilation failure: Compilation failure: 
+[ERROR] /C:/Users/ASUS/Desktop/clone1/backend/src/main/java/com/shoperp/config/DataInitializer.java:[19,33] constructor User in class com.shoperp.model.User cannot be applied to given types;
+[ERROR]   required: no arguments
+[ERROR]   found:    <nulltype>,java.lang.String,java.lang.String,java.lang.String
+[ERROR]   reason: actual and formal argument lists differ in length
+[ERROR] /C:/Users/ASUS/Desktop/clone1/backend/src/main/java/com/shoperp/config/DataInitializer.java:[22,33] constructor User in class com.shoperp.model.User cannot be applied to given types;
+[ERROR]   required: no arguments
+[ERROR]   found:    <nulltype>,java.lang.String,java.lang.String,java.lang.String
+[ERROR]   reason: actual and formal argument lists differ in length
+[ERROR] /C:/Users/ASUS/Desktop/clone1/backend/src/main/java/com/shoperp/controller/AuthController.java:[23,73] cannot find symbol
+[ERROR]   symbol:   method getEmail()
+[ERROR]   location: variable request of type com.shoperp.dto.LoginRequest
+[ERROR] /C:/Users/ASUS/Desktop/clone1/backend/src/main/java/com/shoperp/controller/AuthController.java:[28,21] cannot find symbol
+[ERROR]   symbol:   method getPassword()
+[ERROR]   location: variable user of type com.shoperp.model.User
+[ERROR] /C:/Users/ASUS/Desktop/clone1/backend/src/main/java/com/shoperp/controller/AuthController.java:[28,50] cannot find symbol
+[ERROR]   symbol:   method getPassword()
+[ERROR]   location: variable request of type com.shoperp.dto.LoginRequest
+[ERROR] /C:/Users/ASUS/Desktop/clone1/backend/src/main/java/com/shoperp/controller/AuthController.java:[28,73] cannot find symbol
+[ERROR]   symbol:   method getRole()
+[ERROR]   location: variable user of type com.shoperp.model.User
+[ERROR] /C:/Users/ASUS/Desktop/clone1/backend/src/main/java/com/shoperp/controller/AuthController.java:[28,98] cannot find symbol
+[ERROR]   symbol:   method getRole()
+[ERROR]   location: variable request of type com.shoperp.dto.LoginRequest
+[ERROR] /C:/Users/ASUS/Desktop/clone1/backend/src/main/java/com/shoperp/controller/AuthController.java:[32,54] cannot find symbol
+[ERROR]   symbol:   method getEmail()
+[ERROR]   location: variable user of type com.shoperp.model.User
+[ERROR] /C:/Users/ASUS/Desktop/clone1/backend/src/main/java/com/shoperp/controller/AuthController.java:[34,29] cannot find symbol
+[ERROR]   symbol:   method getRole()
+[ERROR]   location: variable user of type com.shoperp.model.User
+[ERROR] /C:/Users/ASUS/Desktop/clone1/backend/src/main/java/com/shoperp/controller/AuthController.java:[33,29] cannot find symbol
+[ERROR]   symbol:   method getEmail()
+[ERROR]   location: variable user of type com.shoperp.model.User
+[ERROR] /C:/Users/ASUS/Desktop/clone1/backend/src/main/java/com/shoperp/controller/AuthController.java:[40,17] constructor LoginResponse in class com.shoperp.dto.LoginResponse cannot be applied to given types;
+[ERROR]   required: no arguments
+[ERROR]   found:    boolean,java.lang.String,<nulltype>,<nulltype>,<nulltype>
+[ERROR]   reason: actual and formal argument lists differ in length
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

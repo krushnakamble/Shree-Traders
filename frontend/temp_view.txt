@@ -1,0 +1,358 @@
+﻿import React, { useState, useEffect, useMemo } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { Users, ArrowLeft, Loader2, Plus, Trash2, Edit, DollarSign, Layers, Printer, MessageCircle, Phone, MapPin, Calendar, CreditCard, ShoppingBag, Wallet, TrendingUp, TrendingDown, Clock, ShieldCheck, ChevronRight, FileText, Send, AlertCircle, Package, Truck, Settings, HelpCircle, LogOut, Database } from 'lucide-react';
+import './Stock.css';
+
+function CustomerView() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { role = 'user', email = 'Demo User' } = location.state || {};
+
+  const [customer, setCustomer] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [bills, setBills] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
+
+  const [selectedProductId, setSelectedProductId] = useState('');
+  const [quantity, setQuantity] = useState(1);
+  const [billItems, setBillItems] = useState([]);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [paidNow, setPaidNow] = useState('');
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [cashPaymentAmount, setCashPaymentAmount] = useState('');
+  const [remarks, setRemarks] = useState('');
+
+  const [selectedMonth, setSelectedMonth] = useState('ALL');
+
+  const API_BASE = 'http://localhost:8080/api';
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [custResp, prodResp, billsResp] = await Promise.all([
+        fetch(`${API_BASE}/customers/${id}`),
+        fetch(`${API_BASE}/products`),
+        fetch(`${API_BASE}/bills/customer/${id}`)
+      ]);
+      if (!custResp.ok) throw new Error('ग्राहक सापडला नाही');
+      const custData = await custResp.json();
+      const prodData = await prodResp.json();
+      const billsData = await billsResp.json() || [];
+      setCustomer(custData);
+      setProducts(prodData);
+      setBills([...billsData].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)));
+    } catch (err) { setFetchError(err.message); } finally { setLoading(false); }
+  };
+
+  useEffect(() => { fetchData(); }, [id]);
+
+  const safeTotal = (val) => parseFloat(val) || 0;
+
+  const processedData = useMemo(() => {
+    let bakiTracker = 0;
+    const all = bills.map(b => {
+      const net = safeTotal(b.totalAmount) - safeTotal(b.paidAmount);
+      bakiTracker += net;
+      const date = new Date(b.createdAt);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      return { ...b, bakiTracker, monthKey };
+    });
+    const months = [...new Set(all.map(r => r.monthKey))].sort().reverse();
+    const filtered = selectedMonth === 'ALL' ? [...all] : all.filter(r => r.monthKey === selectedMonth);
+    const opening = selectedMonth !== 'ALL' ? all.filter(r => r.monthKey < selectedMonth).reduce((acc, r) => acc + (safeTotal(r.totalAmount) - safeTotal(r.paidAmount)), 0) : 0;
+    const mDebit = filtered.reduce((acc, r) => acc + safeTotal(r.totalAmount), 0);
+    const mCredit = filtered.reduce((acc, r) => acc + safeTotal(r.paidAmount), 0);
+    return { ledgerRows: [...filtered].reverse(), availableMonths: months, summary: { opening, mDebit, mCredit, closing: opening + mDebit - mCredit, totalBaki: bakiTracker } };
+  }, [bills, selectedMonth]);
+
+  const { ledgerRows, availableMonths, summary } = processedData;
+  const currentBillAmount = billItems.reduce((acc, i) => acc + i.totalPrice, 0);
+  const grandTotalPayable = summary.totalBaki + currentBillAmount;
+
+  const addItem = () => {
+    if (!selectedProductId) return;
+    const prod = products.find(p => p.id === parseInt(selectedProductId));
+    if (!prod || prod.quantity < quantity) { alert('मालसाठा अपुरा आहे (Insufficient stock)'); return; }
+    const qty = parseInt(quantity);
+    const existing = billItems.findIndex(i => i.product.id === prod.id);
+    let updated = [...billItems];
+    if (existing > -1) {
+      updated[existing].quantity += qty;
+      updated[existing].totalPrice = updated[existing].quantity * prod.price;
+    } else {
+      updated.push({ product: { id: prod.id, name: prod.name }, quantity: qty, unitPrice: prod.price, totalPrice: prod.price * qty });
+    }
+    setBillItems(updated);
+    setSelectedProductId(''); setQuantity(1);
+  };
+
+  const saveBill = async (total, paid) => {
+    setIsSaving(true);
+    try {
+      const resp = await fetch(`${API_BASE}/bills`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customer: { id: parseInt(id) },
+          totalAmount: total, paidAmount: paid, remarks,
+          items: billItems.map(i => ({ product: { id: i.product.id }, quantity: i.quantity, unitPrice: i.unitPrice, totalPrice: i.totalPrice }))
+        })
+      });
+      if (resp.ok) {
+        setBillItems([]); setPaidNow(''); setRemarks('');
+        setShowPaymentForm(false); setCashPaymentAmount('');
+        await fetchData();
+        alert('नोंद यशस्वी झाली!');
+      }
+    } catch (err) { alert('Network Error.'); } finally { setIsSaving(false); }
+  };
+
+  const sendOnWhatsApp = (msg) => {
+    if (!customer?.phone) return;
+    const cleanPhone = customer.phone.replace(/\D/g, '');
+    const phoneWithCountry = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+    window.open(`https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+
+  const sendCurrentBillOnWA = () => {
+    if (billItems.length === 0) return;
+    let msg = `*प्रिय ${customer.name},*\n\n📋 *नवीन बिल तपशील:*\n`;
+    billItems.forEach(i => { msg += `• ${i.product.name} (${i.quantity} नग) = ₹${i.totalPrice}\n`; });
+    if (remarks) msg += `\n📝 *तपशील:* ${remarks}\n`;
+    msg += `\n💰 *आजचे एकूण बिल:* ₹${currentBillAmount}\n📌 *मागील बाकी:* ₹${summary.totalBaki}\n✅ *एकूण येणे:* ₹${grandTotalPayable}\n\n🙏 *धन्यवाद!*\n*- भाग्यश्री ट्रेडर्स -*`;
+    sendOnWhatsApp(msg);
+  };
+
+  const sendStatementOnWA = () => {
+    let msg = `*प्रिय ${customer.name},*\n\n📊 *खाते हिशोब सारांश (${selectedMonth === 'ALL' ? 'सर्व नोंदी' : selectedMonth}):*\n\n🔹 सुरुवातीची बाकी: ₹${summary.opening}\n🔹 एकूण खरेदी (+): ₹${summary.mDebit}\n🔹 एकूण जमा (-): ₹${summary.mCredit}\n🚩 *अखेरची येणे बाकी: ₹${summary.closing}*\n\nकृपया हिशोब तपासावा.\n🙏 *धन्यवाद!*\n*- भाग्यश्री ट्रेडर्स -*`;
+    sendOnWhatsApp(msg);
+  };
+
+  if (loading) return <div className="loader-container"><Loader2 className="spin" size={64} /><p>डॅशबोर्ड लोड होत आहे...</p></div>;
+
+  return (
+    <div className="erp-container">
+      {/* ENTERPRISE SIDEBAR */}
+      <aside className="erp-sidebar no-print">
+        <div className="erp-brand"><Database size={32} color="#2563eb" /><span>SHOPERP CLOUD</span></div>
+        <nav className="erp-nav">
+          <div className="erp-nav-item" onClick={() => navigate('/stock', { state: { role, email } })}><Package /> इन्व्हेंटरी / स्टॉक</div>
+          <div className="erp-nav-item active" onClick={() => navigate('/customers', { state: { role, email } })}><Users /> ग्राहक खाते (Retail)</div>
+          <div className="erp-nav-item" onClick={() => navigate('/dealers', { state: { role, email } })}><Truck /> डिलर खाते (Wholesale)</div>
+          <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '20px 0' }}></div>
+          <div className="erp-nav-item"><Settings /> सिस्टिम सेटिंग्स</div>
+          <div className="erp-nav-item"><HelpCircle /> सपोर्ट सेंटर</div>
+        </nav>
+        <div className="erp-user-box">
+          <div style={{ width: '40px', height: '40px', background: '#2563eb', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>A</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: '0.85rem', fontWeight: 700 }}>{email.split('@')[0]}</div>
+            <div style={{ fontSize: '0.7rem', color: '#64748b' }}>Administrator</div>
+          </div>
+          <LogOut size={16} style={{ cursor: 'pointer' }} onClick={() => navigate('/')} />
+        </div>
+      </aside>
+
+      {/* MAIN ERP BODY */}
+      <main className="erp-main">
+        <header className="erp-header no-print">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button className="erp-btn outline" onClick={() => navigate('/customers', { state: { role, email } })} style={{ padding: '6px' }}><ArrowLeft size={16}/></button>
+            <h1 className="erp-panel-title">ग्राहक स्टेटमेंट: {customer.name}</h1>
+          </div>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button className="erp-btn outline" onClick={() => window.print()}><Printer size={16} /> प्रिंट करा</button>
+            <button className="erp-btn success" onClick={sendStatementOnWA}><MessageCircle size={16} /> पाठवा</button>
+          </div>
+        </header>
+
+        <div className="erp-content">
+          {/* CUSTOMER PROFILE STRIP */}
+          <div className="erp-panel no-print">
+            <div className="erp-form-row" style={{ gridTemplateColumns: 'auto 1fr auto' }}>
+              <div style={{ width: '60px', height: '60px', background: '#f1f5f9', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '1.5rem', color: '#2563eb' }}>{customer.name.charAt(0)}</div>
+              <div>
+                <h2 style={{ fontSize: '1.4rem', fontWeight: 900 }}>{customer.name}</h2>
+                <p style={{ color: '#64748b', fontSize: '0.85rem' }}><Phone size={12}/> {customer.phone} | <MapPin size={12}/> {customer.address}</p>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b' }}>current balance</span>
+                <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#ef4444' }}>₹{summary.totalBaki.toLocaleString()}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* ACTION CENTER */}
+          <div className="erp-panel no-print">
+            <div className="erp-panel-header" style={{ padding: 0 }}>
+              <button className={`erp-btn ${!showPaymentForm ? 'primary' : 'outline'}`} onClick={() => setShowPaymentForm(false)} style={{ borderRadius: 0, padding: '16px 32px', border: 'none' }}>नवीन विक्री (Sales Entry)</button>
+              <button className={`erp-btn ${showPaymentForm ? 'success' : 'outline'}`} onClick={() => setShowPaymentForm(true)} style={{ borderRadius: 0, padding: '16px 32px', border: 'none' }}>पैसे जमा (Receipt Entry)</button>
+            </div>
+            <div style={{ padding: '24px' }}>
+              {!showPaymentForm ? (
+                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(200px, 1.5fr) 100px 1.5fr auto', gap: '16px', alignItems: 'end' }}>
+                  <div className="erp-input-group"><label>वस्तू निवडा</label><select className="erp-control" value={selectedProductId} onChange={e => setSelectedProductId(e.target.value)}><option value="">Select Item...</option>{products.map(p => (<option key={p.id} value={p.id}>{p.name} - ₹{p.price}</option>))}</select></div>
+                  <div className="erp-input-group"><label>Qty</label><input className="erp-control" type="number" value={quantity} onChange={e => setQuantity(e.target.value)} min="1" /></div>
+                  <div className="erp-input-group"><label>तपशील</label><input className="erp-control" type="text" value={remarks} onChange={e => setRemarks(e.target.value)} placeholder="Remarks..." /></div>
+                  <button className="erp-btn primary" onClick={addItem} style={{ height: '42px' }}><Plus /></button>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr auto', gap: '20px', alignItems: 'end' }}>
+                  <div className="erp-input-group"><label>जमा रक्कम (Receipt Amount)</label><input className="erp-control" type="number" value={cashPaymentAmount} onChange={e => setCashPaymentAmount(e.target.value)} placeholder="0.00" style={{ fontWeight: 800, fontSize: '1.2rem' }} /></div>
+                  <div className="erp-input-group"><label>तपशील / कारण</label><input className="erp-control" type="text" value={remarks} onChange={e => setRemarks(e.target.value)} placeholder="Reason for payment..." /></div>
+                  <button className="erp-btn success" onClick={() => saveBill(0, safeTotal(cashPaymentAmount))} style={{ height: '42px' }}>जमा करा</button>
+                </div>
+              )}
+
+              {!showPaymentForm && billItems.length > 0 && (
+                <div style={{ marginTop: '24px', border: '1px solid var(--erp-border)', borderRadius: '8px', padding: '20px' }}>
+                  <table className="erp-table">
+                    <thead><tr><th>आइटम</th><th style={{ textAlign: 'center' }}>नग</th><th style={{ textAlign: 'right' }}>रक्कम</th><th></th></tr></thead>
+                    <tbody>{billItems.map((item, idx) => (<tr key={idx}><td>{item.product.name}</td><td style={{ textAlign: 'center' }}>{item.quantity}</td><td style={{ textAlign: 'right', fontWeight: 700 }}>₹{item.totalPrice.toLocaleString()}</td><td style={{ textAlign: 'center' }}><Trash2 size={16} onClick={() => setBillItems(billItems.filter((_, i) => i !== idx))} style={{ cursor: 'pointer', color: '#dc2626' }}/></td></tr>))}</tbody>
+                  </table>
+                  <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'end' }}>
+                    <div><span style={{ fontSize: '2rem', fontWeight: 900 }}>TOTAL: ₹{currentBillAmount.toLocaleString()}</span></div>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'end' }}>
+                      <div className="erp-input-group"><label>मिळालेली रोख</label><input className="erp-control" type="number" value={paidNow} onChange={e => setPaidNow(e.target.value)} placeholder="Paid amount" style={{ fontWeight: 800 }} /></div>
+                      <button className="erp-btn primary" onClick={() => saveBill(currentBillAmount, safeTotal(paidNow))}>बिल पूर्ण करा</button>
+                      <button className="erp-btn outline" onClick={sendCurrentBillOnWA} style={{ color: '#059669' }}><MessageCircle size={18}/></button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* LEDGER CARD */}
+          <div className="erp-panel">
+            <div className="erp-panel-header">
+              <h3 className="erp-panel-title">खाते लेजर (Audit Trail)</h3>
+              <select className="erp-control" value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} style={{ padding: '4px 12px', fontSize: '0.8rem' }}>
+                <option value="ALL">All Records</option>
+                {availableMonths.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </div>
+            <div className="erp-table-area">
+              <table className="erp-table">
+                <thead><tr><th>प्रविष्टी दिनांक</th><th>तपशील / ID</th><th style={{ textAlign: 'right' }}>खरेदी (+)</th><th style={{ textAlign: 'right' }}>जमा (-)</th><th style={{ textAlign: 'right' }}>शिल्लक बाकी</th></tr></thead>
+                <tbody>
+                  {ledgerRows.map(b => (
+                    <tr key={b.id}>
+                      <td><div style={{ fontWeight: 800 }}>{new Date(b.createdAt).toLocaleDateString()}</div><div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Ref: #{b.id}</div></td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>      {/* VERY ADVANCE LEVEL PRINT VIEW */}
+      <div className="print-only" style={{ padding: '40px', color: '#000', background: 'white', minHeight: '100vh', fontFamily: 'serif' }}>
+        {/* OFFICIAL HEADER */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '4px solid #000', paddingBottom: '20px' }}>
+          <div>
+            <h1 style={{ fontSize: '3.5rem', fontWeight: 950, margin: 0, letterSpacing: '-2px' }}>भाग्यश्री ट्रेडर्स</h1>
+            <p style={{ fontSize: '1.2rem', margin: '5px 0', textTransform: 'uppercase', letterSpacing: '4px', color: '#333' }}>सोलापूर मधील विश्वसनीय व्यापारी केंद्र</p>
+            <p style={{ fontSize: '0.9rem', color: '#555' }}>पत्ता: मु. पो. सोलापूर, महाराष्ट्र - ४१३००1</p>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <h2 style={{ fontSize: '1.8rem', background: '#000', color: '#fff', padding: '10px 30px', margin: 0 }}>खाते हिशोब पत्रक</h2>
+            <p style={{ marginTop: '10px', fontSize: '1.1rem' }}>दिनांक: <strong>{new Date().toLocaleDateString('en-GB')}</strong></p>
+            <p style={{ fontSize: '0.9rem' }}>वेळ: {new Date().toLocaleTimeString()}</p>
+          </div>
+        </div>
+
+        {/* CUSTOMER & ACCOUNT SUMMARY GRID */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 2fr', gap: '40px', marginTop: '40px' }}>
+          {/* Customer Part */}
+          <div style={{ border: '2px solid #000', padding: '24px', borderRadius: '4px', textAlign: 'left' }}>
+            <p style={{ fontSize: '0.8rem', textTransform: 'uppercase', fontWeight: 800, color: '#666', marginBottom: '10px' }}>To (प्रति),</p>
+            <h2 style={{ fontSize: '1.8rem', margin: '0 0 10px 0', fontWeight: 900 }}>{customer.name}</h2>
+            <p style={{ fontSize: '1.1rem', margin: '4px 0' }}>फोन: <strong>{customer.phone}</strong></p>
+            <p style={{ fontSize: '1rem', margin: '4px 0' }}>पत्ता: {customer.address}</p>
+            <p style={{ fontSize: '0.95rem', color: '#333', marginTop: '20px' }}>ग्राहक आयडी: <strong>#CUST-00{customer.id}</strong></p>
+          </div>
+
+          {/* Balance Matrix */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px', background: '#000', border: '2px solid #000' }}>
+            <div style={{ background: '#fff', padding: '20px', textAlign: 'center' }}>
+              <p style={{ fontSize: '0.8rem', fontWeight: 800 }}>मागील येणे (Opening)</p>
+              <h3 style={{ fontSize: '1.6rem', margin: '10px 0' }}>₹{summary.opening.toLocaleString()}/-</h3>
+            </div>
+            <div style={{ background: '#fff', padding: '20px', textAlign: 'center' }}>
+              <p style={{ fontSize: '0.8rem', fontWeight: 800 }}>एकूण विक्री (+)</p>
+              <h3 style={{ fontSize: '1.6rem', margin: '10px 0', color: '#d00' }}>₹{summary.mDebit.toLocaleString()}/-</h3>
+            </div>
+            <div style={{ background: '#fff', padding: '20px', textAlign: 'center' }}>
+              <p style={{ fontSize: '0.8rem', fontWeight: 800 }}>एकूण जमा (-)</p>
+              <h3 style={{ fontSize: '1.6rem', margin: '10px 0', color: '#080' }}>₹{summary.mCredit.toLocaleString()}/-</h3>
+            </div>
+            <div style={{ background: '#000', color: '#fff', padding: '20px', textAlign: 'center' }}>
+              <p style={{ fontSize: '0.8rem', fontWeight: 800 }}>अखेरची बाकी (Total Baki)</p>
+              <h3 style={{ fontSize: '1.8rem', margin: '10px 0', fontWeight: 900 }}>₹{summary.totalBaki.toLocaleString()}/-</h3>
+            </div>
+          </div>
+        </div>
+
+        {/* TRANSACTION AUDIT LOG */}
+        <div style={{ marginTop: '40px' }}>
+          <h3 style={{ textAlign: 'center', marginBottom: '20px', letterSpacing: '2px', textDecoration: 'underline' }}>तपशीलवार व्यवहार यादी (Transaction Audit Log)</h3>
+          <table className="erp-table" style={{ border: '2px solid #000', width: '100%', borderCollapse: 'collapse' }}>
+            <thead style={{ background: '#f0f0f0' }}>
+              <tr>
+                <th style={{ border: '1px solid #000', color: '#000', fontWeight: 900, padding: '12px' }}>दिनांक</th>
+                <th style={{ border: '1px solid #000', color: '#000', fontWeight: 900, padding: '12px' }}>तपशील / खरेदी-विक्री नोंदी</th>
+                <th style={{ border: '1px solid #000', textAlign: 'right', color: '#000', fontWeight: 900, padding: '12px' }}>खरेदी (+)</th>
+                <th style={{ border: '1px solid #000', textAlign: 'right', color: '#000', fontWeight: 900, padding: '12px' }}>जमा (-)</th>
+                <th style={{ border: '1px solid #000', textAlign: 'right', color: '#000', fontWeight: 900, padding: '12px' }}>बाकी (Balance)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ledgerRows.map(b => (
+                <tr key={b.id}>
+                  <td style={{ border: '1px solid #000', fontWeight: 800, padding: '12px' }}>{new Date(b.createdAt).toLocaleDateString()}</td>
+                  <td style={{ border: '1px solid #000', padding: '12px' }}>{b.remarks || (b.totalAmount > 0 ? 'माल खरेदी' : 'पेमेंट जमा')} | रिफ: <strong>#{b.id}</strong></td>
+                  <td style={{ border: '1px solid #000', textAlign: 'right', fontWeight: 700, padding: '12px' }}>{b.totalAmount > 0 ? b.totalAmount.toLocaleString() : '-'}</td>
+                  <td style={{ border: '1px solid #000', textAlign: 'right', fontWeight: 700, padding: '12px' }}>{b.paidAmount > 0 ? b.paidAmount.toLocaleString() : '-'}</td>
+                  <td style={{ border: '1px solid #000', textAlign: 'right', fontWeight: 950, fontSize: '1.1rem', background: '#f9f9f9', padding: '12px' }}>₹{b.bakiTracker.toLocaleString()}/-</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* FOOTER & SIGNATURE */}
+        <div style={{ marginTop: '60px', borderTop: '2px solid #000', paddingTop: '20px', display: 'flex', justifyContent: 'space-between', textAlign: 'left' }}>
+          <div style={{ fontSize: '0.85rem' }}>
+            <p>• संगणकीय प्रणालीद्वारे तयार केलेले स्टेटमेंट असल्याने सहीची आवश्यकता नाही.</p>
+            <p>• काही त्रुटी आढळल्यास त्वरित संपर्क साधावा.</p>
+            <p style={{ marginTop: '20px', fontWeight: 800 }}>हिशोब तपासल्याबद्दल धन्यवाद!</p>
+          </div>
+          <div style={{ textAlign: 'center', width: '250px' }}>
+            <div style={{ height: '80px' }}></div>
+            <p style={{ borderTop: '2px solid #000', paddingTop: '10px', fontWeight: 900 }}>अधिकृत स्वाक्षरी (Auth. Sign)</p>
+            <p style={{ fontSize: '0.8rem' }}>भाग्यश्री ट्रेडर्स करिता</p>
+          </div>
+        </div>
+      </div>
+�डर्स हिशोब पत्रक</h1>
+          <p>व्यवहार स्टेटमेंट - {customer.name}</p>
+        </div>
+        <table className="erp-table">
+          <thead><tr><th>दिनांक</th><th>तपशील</th><th>येणे (DR)</th><th>जमा (CR)</th><th>बाकी (BAL)</th></tr></thead>
+          <tbody>{ledgerRows.map(b => (
+            <tr key={b.id}>
+              <td>{new Date(b.createdAt).toLocaleDateString()}</td>
+              <td>{b.remarks || (b.totalAmount > 0 ? 'BILL' : 'CASH')} | #{b.id}</td>
+              <td style={{ textAlign: 'right' }}>{safeTotal(b.totalAmount).toLocaleString()}</td>
+              <td style={{ textAlign: 'right' }}>{safeTotal(b.paidAmount).toLocaleString()}</td>
+              <td style={{ textAlign: 'right', fontWeight: 900 }}>{b.bakiTracker.toLocaleString()}</td>
+            </tr>
+          ))}</tbody>
+        </table>
+        <div style={{ marginTop: '40px', borderTop: '2px solid #000', paddingTop: '10px', textAlign: 'right' }}>
+          <h3>अखेरची येणे बाकी: ₹{summary.totalBaki.toLocaleString()}/-</h3>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default CustomerView;
