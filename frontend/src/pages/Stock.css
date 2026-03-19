@@ -568,3 +568,45 @@ body {
     align-items: flex-start;
   }
 }
+
+/* DEEP MOBILE FIXES FOR OVERFLOWS */
+@media (max-width: 768px) {
+  .erp-main, .erp-content, .erp-panel {
+    min-width: 0;
+    max-width: 100vw;
+  }
+  
+  .erp-table-area {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .erp-search-container {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .erp-form-row {
+    padding: 15px;
+  }
+
+  h1.erp-panel-title {
+    font-size: 1.15rem;
+    word-break: break-word;
+  }
+
+  .erp-stats {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .erp-header { padding: 12px; }
+  .erp-content { padding: 8px; }
+  .erp-panel { margin-bottom: 16px; border-radius: 8px; }
+  .erp-panel-header { padding: 12px; }
+  .erp-card-header-clean { padding: 12px; }
+}
