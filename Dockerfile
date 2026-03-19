@@ -9,7 +9,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Run stage
-FROM eclipse-temurin:17-jre-alpines
+FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 # Copy the compiled jar from the build stage
 COPY --from=build /app/target/*.jar app.jar
